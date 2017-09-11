@@ -3,7 +3,7 @@ Contributors: socialsharepro
 Tags: Share, sharing, share buttons, share button, share social media, share icons, buttons, sharing buttons, sharing icons, social media icons, social share, social sharing
 Requires at least: 3.0
 Tested up to: 4.8.1
-Stable tag: 2.7.0
+Stable tag: 2.7.1
 License: GPLv2 
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -432,6 +432,9 @@ The premium plugin offrs many more buttons from other social media platforms suc
 
 == Changelog ==
 
+= 2.7.1 =
+* Added more themed icons banners
+
 = 2.7.0 =
 * There were conflicts when both free USM plugins were installed at the same time, those are now resolved
 
@@ -689,5 +692,5 @@ The premium plugin offrs many more buttons from other social media platforms suc
 
 == Upgrade Notice ==
 
-= 2.7.0 =
+= 2.7.1 =
 * Please update

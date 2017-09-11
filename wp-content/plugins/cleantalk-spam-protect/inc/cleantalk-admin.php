@@ -228,18 +228,21 @@ function ct_enqueue_scripts($hook) {
 	if( $hook == 'comments_page_ct_check_spam' || $hook == 'edit-comments.php'){
 		
 		wp_enqueue_style('cleantalk_admin_css_settings_page', plugins_url().'/cleantalk-spam-protect/assets/css/cleantalk-spam-check.css', array(), $cleantalk_plugin_version, 'all');
+		wp_enqueue_style('jqueryui_css', plugins_url().'/cleantalk-spam-protect/assets/js/jquery-ui.min.css', array(),         '1.21.1',                  'all');
 		
 		$ajax_nonce = wp_create_nonce( "ct_secret_nonce" );
 		$user_token = !empty($ct_data['user_token']) ? $ct_data['user_token'] : '';
 		$show_check_links = !empty($ct_options['show_check_links']) ? $ct_options['show_check_links'] : 0; 
 		
 		wp_enqueue_script('ct_comments_checkspam',            plugins_url('/cleantalk-spam-protect/assets/js/cleantalk-comments-checkspam.js'),           array(), $cleantalk_plugin_version);
-		wp_enqueue_script('ct_comments_editscreen',           plugins_url('/cleantalk-spam-protect/assets/js/cleantalk-comments-editscreen.js'),          array(), $cleantalk_plugin_version.time());
+		wp_enqueue_script('ct_comments_editscreen',           plugins_url('/cleantalk-spam-protect/assets/js/cleantalk-comments-editscreen.js'),          array(), $cleantalk_plugin_version);
+		wp_enqueue_script('jqueryui',           plugins_url('/cleantalk-spam-protect/assets/js/jquery-ui.min.js'),                          array(), '1.12.1');
 		
 		wp_localize_script( 'jquery', 'ctCommentsCheck', array(
 			'ct_ajax_nonce' => $ajax_nonce,
 			'ct_timeout_confirm'          => __('Failed from timeout. Going to check comments again.', 'cleantalk'),
 			'ct_comments_added'           => __('Added', 'cleantalk'),
+			'ct_comments_deleted'         => __('Deleted', 'cleantalk'),
 			'ct_comments_added_after'     => __('comments', 'cleantalk'),
 			'ct_confirm_deletion_all'     => __('Delete all spam comments?', 'cleantalk'),
 			'ct_confirm_deletion_checked' => __('Delete checked comments?', 'cleantalk'),
@@ -263,6 +266,7 @@ function ct_enqueue_scripts($hook) {
 	if( $hook == 'users_page_ct_check_users' || $hook == 'users.php'){
 		
 		wp_enqueue_style('cleantalk_admin_css_settings_page', plugins_url().'/cleantalk-spam-protect/assets/css/cleantalk-spam-check.css', array(), $cleantalk_plugin_version, 'all');
+		wp_enqueue_style('jqueryui_css', plugins_url().'/cleantalk-spam-protect/assets/js/jquery-ui.min.css', array(),         '1.21.1',                  'all');
 		
 		$current_user = wp_get_current_user();
 		$ajax_nonce = wp_create_nonce( "ct_secret_nonce" );
@@ -270,12 +274,14 @@ function ct_enqueue_scripts($hook) {
 		
 		wp_enqueue_script('ct_users_checkspam',               plugins_url('/cleantalk-spam-protect/assets/js/cleantalk-users-checkspam.js'),              array(), $cleantalk_plugin_version);
 		wp_enqueue_script('ct_users_editscreen',              plugins_url('/cleantalk-spam-protect/assets/js/cleantalk-users-editscreen.js'),             array(), $cleantalk_plugin_version);
+		wp_enqueue_script('jqueryui',           plugins_url('/cleantalk-spam-protect/assets/js/jquery-ui.min.js'),                          array(), '1.12.1');
 		
 		wp_localize_script( 'jquery', 'ctUsersCheck', array(
 			'ct_ajax_nonce'               => $ajax_nonce,
 			'ct_timeout'                  => __('Failed from timeout. Going to check users again.', 'cleantalk'),
 			'ct_timeout_delete'           => __('Failed from timeout. Going to run a new attempt to delete spam users.', 'cleantalk'),
 			'ct_inserted'                 => __('Inserted', 'cleantalk'),
+			'ct_deleted'                  => __('Deleted', 'cleantalk'),
 			'ct_iusers'                   => __('users.', 'cleantalk'),
 			'ct_confirm_deletion_all'     => __('Delete all spam users?', 'cleantalk'),
 			'ct_confirm_deletion_checked' => __('Delete checked users?', 'cleantalk'),
@@ -378,9 +384,9 @@ function ct_account_status_check(){
  * Admin action 'admin_init' - Add the admin settings and such
  */
 function ct_admin_init(){
-
+	
 	global $ct_server_timeout, $show_ct_notice_autokey, $ct_notice_autokey_label, $ct_notice_autokey_value, $show_ct_notice_renew, $ct_notice_renew_label, $show_ct_notice_trial, $ct_notice_trial_label, $show_ct_notice_online, $ct_notice_online_label, $renew_notice_showtime, $trial_notice_showtime, $ct_plugin_name, $ct_options, $ct_data, $ct_user_token_label, $cleantalk_plugin_version, $notice_check_timeout, $ct_agent_version;
-		
+	
     $ct_options = ct_get_options();
 	$ct_data = ct_get_data();
 	

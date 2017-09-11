@@ -1,4 +1,5 @@
 <?php
+
 add_action('admin_menu', 'ct_add_comments_menu');
 add_action( 'wp_ajax_ajax_check_comments', 'ct_ajax_check_comments' );
 add_action( 'wp_ajax_ajax_info_comments', 'ct_ajax_info_comments' );
@@ -8,10 +9,9 @@ add_action( 'wp_ajax_ajax_delete_all', 'ct_ajax_delete_all' );
 add_action( 'wp_ajax_ajax_clear_comments', 'ct_ajax_clear_comments' );
 add_action( 'wp_ajax_ajax_ct_approve_comment', 'ct_comment_check_approve_comment' );
 
-
 function ct_add_comments_menu(){
 	if(current_user_can('activate_plugins'))
-		add_comments_page( __("Check for spam", 'cleantalk'), __("Check for spam", 'cleantalk'), 'read', 'ct_check_spam', 'ct_show_checkspam_page');
+		add_comments_page( __("Check for spam", 'cleantalk'), __("Show spam comments", 'cleantalk'), 'read', 'ct_check_spam', 'ct_show_checkspam_page');
 }
 
 function ct_show_checkspam_page(){
@@ -31,25 +31,44 @@ function ct_show_checkspam_page(){
 	
 ?>
 	<div class="wrap">
-		<h2><?php echo $ct_plugin_name; ?></h2><br />
+		<h2><img src="<?php echo plugin_dir_url(__FILE__) ?>/images/logo_color.png" /> <?php echo $ct_plugin_name; ?></h2><br />
 		
-		<!-- AJAX error message --> 
+	<!-- AJAX error message --> 
 		<div id="ct_error_message" style="display:none">
 			<h3>
 				<?php _e("Ajax error. Process will be automatically restarted in 3 seconds. Status: ", 'cleantalk'); ?><span id="cleantalk_ajax_error"></span> (<span id="cleantalk_js_func"></span>)
 			</h3>
-			<h4 style="text-align:center;width:90%;">Please, check for JavaScript errors in your dashboard and and repair it.</h4>
+			<h4>Please, check for JavaScript errors in your dashboard and and repair it.</h4>
 		</div>
 		
-		<!-- Deleting message --> 
+	<!-- Deleting message --> 
 		<div id="ct_deleting_message" style="display:none;">
 			<?php _e("Please wait for a while. CleanTalk is deleting spam comments. Comments left: ", 'cleantalk'); ?> <span id="cleantalk_comments_left">
             <?php echo $cnt_spam; ?>
             </span>
 		</div>
 		
-		<!-- Main info --> 
+	<!-- Main info --> 
 		<h3 id="ct_checking_status"><?php echo ct_ajax_info_comments(true);?></h3>
+		
+	<!-- Check options -->
+		<div class="ct_to_hide" id="ct_check_params_wrapper">
+			<button class="button ct_check_params_elem" id="ct_check_spam_button"><?php _e("Start check", 'cleantalk'); ?></button>
+			<p class="ct_check_params_desc"><?php _e("The plugin will check all comments against blacklists database and show you senders that have spam activity on other websites.", 'cleantalk'); ?></p>
+			<br />
+			<div class="ct_check_params_elem ct_check_params_elem_sub">
+				<input id="ct_accurate_check" type="checkbox" value="1" /><b><label for="ct_accurate_check"><?php _e("Accurate check", 'cleantalk'); ?></b></label>
+			</div>
+			<p class="ct_check_params_desc"><?php _e("Allows to use comment's dates to perform more accurate check. Could seriously slow down the check.", 'cleantalk'); ?></p>
+			<br />
+			<div class="ct_check_params_elem ct_check_params_elem_sub">
+				<input id="ct_allow_date_range" type="checkbox" value="1" /><label for="ct_allow_date_range"><b><?php _e("Specify date range", 'cleantalk'); ?></b></label>
+			</div>
+			<div class="ct_check_params_desc">
+				<input class="ct_date" type="text" id="ct_date_range_from" value="<?php echo isset($_GET['from']) ? $_GET['from'] : ''; ?>" readonly />
+				<input class="ct_date" type="text" id="ct_date_range_till" value="<?php echo isset($_GET['till']) ? $_GET['till'] : ''; ?>" readonly />
+			</div>
+		</div>
 		
 		<!-- Cooling notice --> 
 		<h3 id="ct_cooling_notice"></h3>
@@ -61,6 +80,7 @@ function ct_show_checkspam_page(){
 		<div id="ct_working_message">
 			<?php _e("Please wait! CleanTalk is checking all approved and pending comments via blacklist database at cleantalk.org. You will have option to delete found spam comments after plugin finish.", 'cleantalk'); ?>
 		</div>
+		
 		<?php
 			
 			// Pagination			
@@ -84,7 +104,7 @@ function ct_show_checkspam_page(){
 				
 				$pages = ceil(intval($cnt_spam)/$on_page);
 				if($pages && $pages != 1){
-					echo "<div class='pagination'>"
+					echo "<div class='ct_to_hide pagination'>"
 							."<b>Pages:</b>"
 							."<ul class='pagination'>";
 								for($i = 1; $i <= $pages; $i++){
@@ -98,7 +118,7 @@ function ct_show_checkspam_page(){
 					echo "</div>";
 				}
 		?>
-				<table class="widefat fixed comments" id="ct_check_comments_table">
+				<table class="ct_to_hide widefat fixed comments" id="ct_check_comments_table">
 					<thead>
 						<th scope="col" id="cb" class="manage-column column-cb check-column">
 							<label class="screen-reader-text" for="cb-select-all-1">Select All</label>
@@ -193,7 +213,7 @@ function ct_show_checkspam_page(){
 				<?php
 					// Pagination
 					if($pages && $pages != 1){
-						echo "<div class='pagination'>"
+						echo "<div class='ct_to_hide pagination'>"
 								."<b>Pages:</b>"
 								."<ul class='pagination'>";
 									for($i = 1; $i <= $pages; $i++){
@@ -207,34 +227,24 @@ function ct_show_checkspam_page(){
 						echo "</div>";
 					}
 				?>
-				<div id="ct_tools_buttons" style="margin-top: 10px;">
-					<button class="button" id="ct_delete_all"><?php _e('Delete all comments from the list', 'cleantalk'); ?></button> 
+				<div class="ct_to_hide" id="ct_tools_buttons" style="margin-top: 10px;">
+					<button class= "button" id="ct_delete_all"><?php _e('Delete all comments from the list', 'cleantalk'); ?></button> 
 					<button class="button" id="ct_delete_checked"><?php _e('Delete selected', 'cleantalk'); ?></button><br /><br />
 				</div>
 				<?php
 			}
-			echo $_SERVER['REMOTE_ADDR']=='127.0.0.1' ? '<br /><button class="button" id="ct_insert_comments">'. __('Insert comments', 'cleantalk') .'</button><br />' : '';
-			?>
-		<br />
-		<table id="new_test_table">
-			<tr valign="top">
-				<td>
-					<button class="button" id="ct_check_spam_button"><?php _e("Check for spam", 'cleantalk'); ?></button><br /><br />
-				</td>
-				<td style="padding-left: 2em;">
-					<div id="ct_info_message">
-						<?php _e("The plugin will check all comments against blacklists database and show you senders that have spam activity on other websites.", 'cleantalk'); ?>
-					</div>
-				</td>
-			</tr>
-		</table>
-		<?php
+			echo $_SERVER['REMOTE_ADDR']=='127.0.0.1' ? '<button class="button ct_to_hide" id="ct_insert_comments">'. __('Insert comments', 'cleantalk') .' (100)</button> ' : '';
+			echo $_SERVER['REMOTE_ADDR']=='127.0.0.1' ? '<button class="button ct_to_hide" id="ct_delete_comments">'. __('Delete comments', 'cleantalk') .' (110)</button>' : '';
+			
 			if($cnt_spam > 0)
 				echo "<div id='ct_search_info'>"
 						."<br />"
 						.__('There is some differencies between blacklists database and our API mechanisms. Blacklists shows all history of spam activity, but our API (that used in spam checking) used another parameters, too: last day of activity, number of spam attacks during last days etc. This mechanisms help us to reduce number of false positivitie. So, there is nothing strange, if some emails/IPs will be not found by this checking.', 'cleantalk')
 					."</div>";
 		?>
+		<div>
+			<button class="button" id="ct_stop_deletion" style="display:none;"><?php _e("Stop deletion", 'cleantalk'); ?></button>
+		</div>
 	</div>
 	<?php
 }
@@ -242,13 +252,21 @@ function ct_show_checkspam_page(){
 function ct_ajax_check_comments(){
 	
 	check_ajax_referer( 'ct_secret_nonce', 'security' );
+	
 	global $ct_options, $ct_ip_penalty_days;
+	
 	$ct_options = ct_get_options();
 	
-	$args_unchecked = array(
+	$params = array(
+		'fields' => array(
+			'comment_ID',
+			'comment_date_gmt',
+			'comment_author_IP',
+			'comment_author_email',
+		),
 		'meta_query' => array(
 			'relation' => 'AND',
-			Array(
+			array(
 				'key' => 'ct_checked',
 				'compare' => 'NOT EXISTS'
 			),
@@ -257,12 +275,25 @@ function ct_ajax_check_comments(){
 				'compare' => 'NOT EXISTS'
 			)
 		),
-		'orderby' => 'comment_date',
+		'orderby' => 'comment_date_gmt',
 		'order' => 'ASC',
 		'number' => 100
 	);
-	$c = get_comments($args_unchecked);
-    $c = array_values($c);
+	
+	if(isset($_POST['from'], $_POST['till'])){
+		
+		$from_date = date('Y-m-d', intval(strtotime($_POST['from'])));
+		$till_date = date('Y-m-d', intval(strtotime($_POST['till'])));
+
+		$params['date_query'] = array(
+			'column'   => 'comment_date_gmt',
+			'after'     => $from_date,
+			'before'    => $till_date,
+			'inclusive' => true,						
+		);
+	}
+	
+	$c = get_comments( $params );
 	
 	$check_result = array(
 		'end' => 0,
@@ -274,17 +305,20 @@ function ct_ajax_check_comments(){
 	
 	if(sizeof($c)>0){
 		
-		// Leaving comments only with first comment's date. Unsetting others.
-		foreach($c as $comment_index => $comment){
+		if(!empty($_POST['accurate_check'])){
+			// Leaving comments only with first comment's date. Unsetting others.
 			
-			if(!isset($curr_date))
-				$curr_date = (substr($comment->comment_date, 0, 10) ? substr($comment->comment_date, 0, 10) : '');
+			foreach($c as $comment_index => $comment){
+				
+				if(!isset($curr_date))
+					$curr_date = (substr($comment->comment_date_gmt, 0, 10) ? substr($comment->comment_date_gmt, 0, 10) : '');
+				
+				if(substr($comment->comment_date_gmt, 0, 10) != $curr_date)
+					unset($c[$comment_index]);
 
-			if(substr($comment->comment_date, 0, 10) != $curr_date)
-				unset($c[$comment_index]);
-
+			}
+			unset($comment_index, $comment);
 		}
-		unset($comment_index, $comment);
 		
 		// Checking comments IP/Email. Gathering $data for check.
 		$data = Array();
@@ -301,7 +335,6 @@ function ct_ajax_check_comments(){
 				$check_result['bad']++;
 				update_comment_meta($c[$i]->comment_ID,'ct_bad','1');
 				unset($c[$i]);
-				
 			}else{
 				if(!empty($curr_ip))
 					$data[] = $curr_ip;
@@ -330,7 +363,8 @@ function ct_ajax_check_comments(){
         $request['method_name'] = 'spam_check_cms'; 
         $request['auth_key'] = $ct_options['apikey'];
         $request['data'] = $data;
-		$request['date'] = $curr_date;
+		if(!empty($_POST['accurate_check']))
+			$request['date'] = $curr_date;
 				
         $url='https://api.cleantalk.org';
 		
@@ -346,23 +380,13 @@ function ct_ajax_check_comments(){
 		}else{
 		
 			$result=json_decode($result);
+			
 			if(isset($result->error_message)){
-				
-				// Data not set, marks comments as checked to avoid loops.
-				// if (isset($result->error_no) && $result->error_no == 8) { // Data not set.
-					// for($i=0;$i<sizeof($c);$i++) {
-						// add_comment_meta($c[$i]->comment_ID,'ct_checked',date("Y-m-d H:m:s"),true);
-					// }
-					// print 1;
-				// }else{
-					$check_result['error'] = 1;
-					$check_result['error_message'] = __('Server response: ', 'cleantalk').$result->error_message;
-					print "Server response: ".$result->error_message;
-				// }
-				
+				$check_result['error'] = 1;
+				$check_result['error_message'] = __('Server response: ', 'cleantalk').$result->error_message;
+				print "Server response: ".$result->error_message;
 			}else{
 				for($i=0;$i<sizeof($c);$i++){
-					
 					
 					$mark_spam_ip = false;
 					$mark_spam_email = false;
@@ -398,33 +422,48 @@ function ct_ajax_info_comments($direct_call = false){
 	
 	if (!$direct_call)
         check_ajax_referer( 'ct_secret_nonce', 'security' );
-
+	
+	// Checking dates value
+	if(isset($_POST['from'], $_POST['till'])){
+		
+		$from_date = date('Y-m-d', intval(strtotime($_POST['from'])));
+		$till_date = date('Y-m-d', intval(strtotime($_POST['till'])));
+	}
+	
 	// Total comments
-	$cnt = get_comments(Array('count'=>true));
+	$params = array(
+		'fields' => 'ids',
+		'count' => true,
+	);
+	if(isset($from_date, $till_date)) $params['date_query'] = array('column' => 'comment_date_gmt', 'after' => $from_date, 'before' => $till_date, 'inclusive' => true);
+	$cnt = get_comments( $params );
 	
 	// Spam comments
-	$cnt_spam = get_comments(
-		array(
-			'meta_key' => 'ct_marked_as_spam',
-			'count' => true
-		)
+	$params = array(
+		'fields' => 'ids',
+		'meta_key' => 'ct_marked_as_spam',
+		'count' => true
 	);
+	if(isset($from_date, $till_date)) $params['date_query'] = array('column' => 'comment_date_gmt', 'after' => $from_date, 'before' => $till_date, 'inclusive' => true);
+	$cnt_spam = get_comments( $params );
 	
 	// Checked comments
-	$cnt_checked =get_comments(
-		array(
-			'meta_key' => 'ct_checked',
-			'count' => true
-		)
+	$params = array(
+		'fields' => 'ids',
+		'meta_key' => 'ct_checked',
+		'count' => true
 	);
-		
+	if(isset($from_date, $till_date)) $params['date_query'] = array('column' => 'comment_date_gmt', 'after' => $from_date, 'before' => $till_date, 'inclusive' => true);
+	$cnt_checked = get_comments( $params );
+	
 	// Bad comments (without IP and Email)
-	$cnt_bad =get_comments(
-		array(
-			'meta_key' => 'ct_bad',
-			'count' => true
-		)
+	$params = array(
+		'fields' => 'ids',
+		'meta_key' => 'ct_bad',
+		'count' => true
 	);
+	if(isset($from_date, $till_date)) $params['date_query'] = array('column' => 'comment_date_gmt', 'after' => $from_date, 'before' => $till_date, 'inclusive' => true);
+	$cnt_bad = get_comments( $params );
 	
 	$return = array(
 		'message' => '',
@@ -452,10 +491,27 @@ function ct_ajax_info_comments($direct_call = false){
 function ct_ajax_insert_comments(){
 	
 	check_ajax_referer( 'ct_secret_nonce', 'security' );
+	
+	//* DELETION
+	if(!empty($_POST['delete'])){
+		$comments = get_comments(array('author_email' => 'stop_email@example.com'));
+		$deleted = 0;
+		$amount_to_delete = 15;
+		foreach($comments as $comment){
+			if($deleted >= $amount_to_delete)
+				break;
+			if(wp_delete_comment($comment->comment_ID, true))
+				$deleted++;
+		}
+		 print "$deleted";
+		die();
+	}
+	
+	//* INSERTION
 	global $wpdb;
 	
-	$time = current_time('mysql');
-	$to_insert = 20;
+	$to_insert = 10;
+	$time = current_time('timestamp')-(730*86400);
 	
 	$result = $wpdb->get_results("SELECT network FROM `".$wpdb->base_prefix."cleantalk_sfw` LIMIT $to_insert;", ARRAY_A);
 	
@@ -467,7 +523,10 @@ function ct_ajax_insert_comments(){
 		unset($value);
 	
 		$inserted = 0;
-		for($i=0; $i<$to_insert; $i++){
+		for($i=0, $j=0; $i<$to_insert; $i++, $j++){
+			
+			if(!isset($ips[$j]))
+				$j=0;
 			
 			$rnd=mt_rand(1,100);
 			
@@ -482,13 +541,14 @@ function ct_ajax_insert_comments(){
 				'comment_type' => '',
 				'comment_parent' => 0,
 				'user_id' => 1,
-				'comment_author_IP' => $ips[$i],
+				'comment_author_IP' => $ips[$j],
 				'comment_agent' => 'Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.0.10) Gecko/2009042316 Firefox/3.0.10 (.NET CLR 3.5.30729)',
-				'comment_date' => $time,
+				'comment_date' => date('Y-m-d H:i:s', $time),
 				'comment_approved' => 1,
 			);
 			
 			wp_insert_comment($data);
+			$time = $time + 86400;
 			$inserted++;
 		}
 	}else{

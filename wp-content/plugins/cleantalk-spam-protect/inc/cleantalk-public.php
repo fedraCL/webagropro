@@ -2462,7 +2462,13 @@ function ct_contact_form_validate() {
         return null;
 	
 	// Skip the test if it's WooCommerce and the checkout test unset
-	if(strpos($_SERVER['REQUEST_URI'],'wc-ajax=checkout') !==false && $ct_options['wc_checkout_test'] == 0){
+	if(
+		(
+			strpos($_SERVER['REQUEST_URI'],'wc-ajax=checkout') !==false || (isset($_POST['_wp_http_referer']) &&
+			strpos($_POST['_wp_http_referer'], 'wc-ajax=update_order_review') !== false)
+		) &&
+		$ct_options['wc_checkout_test'] == 0
+	){
 		return null;
 	}
 	

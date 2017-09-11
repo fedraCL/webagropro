@@ -1179,7 +1179,13 @@ class NewsletterControls {
         }).on("select", function() {
             var media = tnp_uploader.state().get("selection").first();
             document.getElementById(name + "_id").value = media.id;
+            if (media.attributes.url.substring(0, 0) == "/") {
+                media.attributes.url = "' . site_url('/') . '" + media.attributes.url;
+            }
             document.getElementById(name + "_url").value = media.attributes.url;
+            if (media.attributes.sizes.medium.url.substring(0, 0) == "/") {
+                media.attributes.sizes.medium.url = "' . site_url('/') . '" + media.attributes.sizes.medium.url;
+            }
             document.getElementById(name + "_img").src = media.attributes.sizes.medium.url;
         }).open();
     }

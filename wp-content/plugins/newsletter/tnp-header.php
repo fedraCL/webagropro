@@ -156,8 +156,18 @@ function newsletter_print_entries($group) {
 <?php } ?>
 
 <?php 
+$newsletter_wp_options = get_option('newsletter_wp');
+if (isset($_GET['debug']) || !isset($dismissed['newsletter-wp']) && !is_plugin_active('/newsletter-wpusers/wpusers.php') && !empty($newsletter_wp_options['subscribe'])) { ?>
+    <div class="tnp-notice">
+        <a href="<?php echo $_SERVER['REQUEST_URI'] . '&noheader=1&dismiss=newsletter-wp' ?>" class="tnp-dismiss">&times;</a>
+        The <strong>WP Users Integration</strong> feature is now managed with a free extension. Please install it from the 
+        <a href="?page=newsletter_main_extensions">Extensions panel</a>. Thank you.
+    </div>
+<?php }  ?>
+
+<?php 
 $newsletter_lock_options = get_option('newsletter_lock');
-if (isset($_GET['debug']) || !isset($dismissed['newsletter-lock']) && !file_exists(WP_PLUGIN_DIR . '/newsletter-lock') && !empty($newsletter_lock_options['enabled'])) { ?>
+if (isset($_GET['debug']) || !isset($dismissed['newsletter-wp']) && !file_exists(WP_PLUGIN_DIR . '/newsletter-wp') && !empty($newsletter_lock_options['enabled'])) { ?>
     <div class="tnp-notice">
         <a href="<?php echo $_SERVER['REQUEST_URI'] . '&noheader=1&dismiss=newsletter-lock' ?>" class="tnp-dismiss">&times;</a>
         The <strong>Locked Content</strong> feature is now managed with a free extension. Please install it from the 

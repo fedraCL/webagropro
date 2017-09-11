@@ -33,7 +33,7 @@ class NewsletterSubscription extends NewsletterModule {
     function hook_init() {
         add_action('wp_loaded', array($this, 'hook_wp_loaded'));
         if (is_admin()) {
-            // Something
+            add_action('admin_init', array($this, 'hook_admin_init'));
         } else {
             add_action('wp_enqueue_scripts', array($this, 'hook_wp_enqueue_scripts'));
             add_action('wp_head', array($this, 'hook_wp_head'), 100);
@@ -42,6 +42,12 @@ class NewsletterSubscription extends NewsletterModule {
             add_shortcode('newsletter_form', array($this, 'shortcode_newsletter_form'));
             add_shortcode('newsletter_profile', array($this, 'shortcode_newsletter_profile'));
             add_shortcode('newsletter_field', array($this, 'shortcode_newsletter_field'));
+        }
+    }
+    
+    function hook_admin_init() {
+        if (isset($_GET['page']) && $_GET['page'] === 'newsletter_subscription_forms') {
+            header('X-XSS-Protection: 0');
         }
     }
 

@@ -29,9 +29,9 @@
 				<div class="copyright-text">
 					<?php echo wp_kses_post( get_theme_mod( 'shapely_footer_copyright' ) ); ?>
 				</div>
-				<div class="footer-credits">
+				<!--<div class="footer-credits">
 					<?php shapely_footer_info(); ?>
-				</div>
+				</div> -->
 			</div><!-- .site-info -->
 			<div class="col-sm-6 text-right">
 				<?php shapely_social_icons(); ?>

@@ -24,7 +24,10 @@ var ct_ajax_nonce = ctUsersCheck.ct_ajax_nonce,
 	ct_users_checked = 0,
 	ct_users_spam = 0,
 	ct_users_bad = 0,
-	ct_unchecked = 'unset';
+	ct_unchecked = 'unset',
+	ct_accurate_check = false,
+	ct_date_from = 0,
+	ct_date_till = 0;
 
 function animate_comment(to,id){
 	if(ct_close_animate){
@@ -87,6 +90,14 @@ function ct_send_users(){
 		'unchecked': ct_unchecked
 	};
 	
+	if(ct_accurate_check)
+		data['accurate_check'] = true;
+	
+	if(ct_date_from && ct_date_till){
+		data['from'] = ct_date_from;
+		data['till'] = ct_date_till;
+	}
+	
 	jQuery.ajax({
 		type: "POST",
 		url: ajaxurl,
@@ -97,9 +108,12 @@ function ct_send_users(){
 			
 			if(parseInt(msg.error)){
 				ct_working=false;
-				if(!confirm(msg.error_message+". Do you want to proceed?"))
-					location.href='users.php?page=ct_check_users&ct_worked=1';
-				else
+				if(!confirm(msg.error_message+". Do you want to proceed?")){
+					var new_href = 'users.php?page=ct_check_users&ct_worked=1';
+					if(ct_date_from != 0 && ct_date_till != 0)
+						new_href+='&from='+ct_date_from+'&till='+ct_date_till;
+					location.href = new_href;
+				}else
 					ct_send_users();
 			}else{
 				ct_new_check = false;
@@ -112,13 +126,16 @@ function ct_send_users(){
 					var status_string = status_string.printf(ct_users_total, ct_users_checked, ct_users_spam, ct_users_bad);
 					if(parseInt(ct_users_spam) > 0)
 						status_string += ctUsersCheck.ct_status_string_warning;
-					jQuery('#ct_checking_users_status').html(status_string);
+					jQuery('#ct_checking_status').html(status_string);
 					jQuery('#ct_error_message').hide();
 					ct_send_users();
 				}else if(parseInt(msg.end) == 1){
 					ct_working=false;
 					jQuery('#ct_working_message').hide();
-					location.href='users.php?page=ct_check_users&ct_worked=1';
+					var new_href = 'users.php?page=ct_check_users&ct_worked=1';
+					if(ct_date_from != 0 && ct_date_till != 0)
+						new_href+='&from='+ct_date_from+'&till='+ct_date_till;
+					location.href = new_href;
 				}
 			}
 		},
@@ -128,7 +145,7 @@ function ct_send_users(){
 			jQuery('#cleantalk_js_func').html('Check users');
 			setTimeout(ct_send_users(), 3000);
         },
-        timeout: 15000
+        timeout: 25000
 	});
 }
 function ct_show_users_info(){
@@ -146,17 +163,24 @@ function ct_show_users_info(){
 		setTimeout(ct_show_users_info, 3000);
 		
 		if(!ct_users_total){
+			
 			var data = {
 				'action': 'ajax_info_users',
 				'security': ct_ajax_nonce
 			};
+			
+			if(ct_date_from && ct_date_till){
+				data['from'] = ct_date_from;
+				data['till'] = ct_date_till;
+			}
+			
 			jQuery.ajax({
 				type: "POST",
 				url: ajaxurl,
 				data: data,
 				success: function(msg){
 					msg = jQuery.parseJSON(msg);
-					jQuery('#ct_checking_users_status').html(msg.message);
+					jQuery('#ct_checking_status').html(msg.message);
 					ct_users_total = msg.total;
 				},
 				error: function (jqXHR, textStatus, errorThrown){
@@ -170,19 +194,25 @@ function ct_show_users_info(){
 		}
 	}
 }
-function ct_insert_users(){
+function ct_insert_users(delete_accounts = false){
 	
 	var data = {
 		'action': 'ajax_insert_users',
 		'security': ct_ajax_nonce
 	};
 	
+	if(delete_accounts)
+		data['delete'] = true;
+	
 	jQuery.ajax({
 		type: "POST",
 		url: ajaxurl,
 		data: data,
 		success: function(msg){
-		    alert(ctUsersCheck.ct_inserted + ' ' + msg + ' ' + ctUsersCheck.ct_iusers);
+			if(delete_accounts)
+				alert(ctUsersCheck.ct_deleted + ' ' + msg + ' ' + ctUsersCheck.ct_iusers);
+			else
+				alert(ctUsersCheck.ct_inserted + ' ' + msg + ' ' + ctUsersCheck.ct_iusers);
 		}
 	});
 }
@@ -236,7 +266,6 @@ function ct_delete_checked_users(){
 		data: data,
 		success: function(msg){
 			location.href='users.php?page=ct_check_users&ct_worked=1';
-			//alert(msg);
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			jQuery('#ct_error_message').show();
@@ -246,10 +275,118 @@ function ct_delete_checked_users(){
 		},
 		timeout: 15000
 	});
-	return false;
+}
+
+// Function to toggle dependences
+function ct_toggle_depended(obj, secondary = false){
+	
+	var depended = jQuery(obj.data('depended')),
+		state = obj.data('state');
+		
+	if(!state && !secondary){
+		obj.data('state', true);
+		depended.removeProp('disabled');
+	}else{
+		obj.data('state', false);
+		depended.prop('disabled', true);
+		depended.removeProp('checked');
+		if(depended.data('depended'))
+			ct_toggle_depended(depended, true);
+	}
 }
 
 jQuery(document).ready(function(){
+	
+	// Setting dependences
+	// jQuery('#ct_accurate_check')  .data({'depended': '#ct_allow_date_range', 'state': false});
+	jQuery('#ct_allow_date_range').data({'depended': '.ct_date', 'state': false});
+	
+	// Toggle dependences
+	jQuery("#ct_allow_date_range, #ct_accurate_check").on('change', function(){
+		ct_toggle_depended(jQuery(this));
+	});
+	
+	jQuery("#ct_accurate_check").on('change', function(){
+		if(ct_accurate_check)
+			ct_accurate_check = false;
+		else
+			ct_accurate_check = true;
+	});
+	
+	var dates = jQuery('#ct_date_range_from, #ct_date_range_till').datepicker(
+		{
+			dateFormat: 'yy-mm-dd',
+			maxDate:"+0D",
+			changeMonth:true,
+			changeYear:true,
+			showAnim: 'slideDown',
+			onSelect: function(selectedDate){
+			var option = this.id == "ct_date_range_from" ? "minDate" : "maxDate",
+				instance = jQuery( this ).data( "datepicker" ),
+				date = jQuery.datepicker.parseDate(
+					instance.settings.dateFormat || jQuery.datepicker._defaults.dateFormat,
+					selectedDate, instance.settings);
+				dates.not(this).datepicker("option", option, date);
+			}
+		}
+	);
+	jQuery('#ct_date_range_from, #ct_date_range_till').prop('disabled', true);
+/////
+	// Check users
+	jQuery("#ct_check_spam_button").click(function(){
+		
+		if(jQuery('#ct_allow_date_range').is(':checked')){
+			
+			ct_date_from = jQuery('#ct_date_range_from').val(),
+			ct_date_till = jQuery('#ct_date_range_till').val();
+						
+			if(!(ct_date_from != '' && ct_date_till != '')){
+				alert('Please, specify a date range.');
+				return;
+			}
+		}
+		
+		jQuery('.ct_to_hide').hide();
+		jQuery('#ct_working_message').show();
+		jQuery('#ct_preloader').show();
+		
+		ct_working=true;
+		ct_show_users_info();
+		ct_clear_users();
+	});
+	
+	jQuery("#ct_insert_users").click(function(){
+		ct_insert_users();
+	});
+	
+	jQuery("#ct_delete_users").click(function(){
+		ct_insert_users(true);
+	});
+	
+	// Delete all spam users
+	jQuery("#ct_delete_all_users").click(function(){
+		
+		if (!confirm(ctUsersCheck.ct_confirm_deletion_all))
+			return false;
+		
+		jQuery('.ct_to_hide').hide();
+		jQuery('#ct_checking_status').hide();
+		jQuery('#ct_search_info').hide();
+		jQuery('#ct_preloader').show();
+		jQuery('#ct_deleting_message').show();
+		jQuery('#ct_stop_deletion').show();
+		jQuery("html, body").animate({ scrollTop: 0 }, "slow");
+		ct_delete_all_users();
+	});
+	jQuery("#ct_delete_checked_users").click(function(){
+		if (!confirm(ctUsersCheck.ct_confirm_deletion_checked))
+			return false;
+		ct_delete_checked_users();
+	});
+	
+	jQuery("#ct_stop_deletion").click(function(){
+		location.href='users.php?page=ct_check_users&ct_worked=1';
+	});
 	
 	jQuery(".cleantalk_delete_user_button").click(function(){
 		id = jQuery(this).attr("data-id");
@@ -278,57 +415,8 @@ jQuery(document).ready(function(){
 		id = jQuery(this).attr("data-id");
 		animate_comment(0.3, id);
 	});
-
-	// Check users
-	jQuery("#ct_check_users_button").click(function(){
-	//	jQuery('#ct_checking_users_status').html('');
-		jQuery('#ct_delete_checked_users').hide();
-		jQuery('#ct_check_users_table').hide();
-		jQuery('#ct_check_users_button').hide();
-		jQuery('#ct_delete_all_users').hide();
-		jQuery('#ct_get_csv_file').hide();
-		jQuery('div.pagination').hide();
-		jQuery('#ct_info_message').hide();
-		jQuery('#ct_working_message').show();
-		jQuery('#ct_preloader').show();
-		ct_working=true;
-		ct_clear_users();
-		ct_show_users_info();
-	});
-	
-	jQuery("#ct_insert_users").click(function(){
-		ct_insert_users();
-	});
-
-	jQuery("#ct_stop_deletion").click(function(){
-		//window.location.reload();
-		window.location.href='users.php?page=ct_check_users&ct_worked=1';
-	});
-	
-	// Delete all spam users
-	jQuery("#ct_delete_all_users").click(function(){
-		if (!confirm(ctUsersCheck.ct_confirm_deletion_all))
-			return false;
-		jQuery('#ct_checking_users_status').hide();
-		jQuery('#ct_check_users_table').hide();
-		jQuery('#ct_tools_buttons').hide();
-		jQuery('#ct_info_message').hide();
-		jQuery('#ct_ajax_info_users').hide();
-		jQuery('#ct_check_users_button').hide();
-		jQuery('#ct_search_info').hide();
-		jQuery('div.pagination').hide();
-		jQuery('#ct_deleting_message').show();
-		jQuery('#ct_preloader').show();
-		jQuery('#ct_stop_deletion').show();
-		jQuery("html, body").animate({ scrollTop: 0 }, "slow");
-		ct_delete_all_users();
-	});
-	jQuery("#ct_delete_checked_users").click(function(){
-		if (!confirm(ctUsersCheck.ct_confirm_deletion_checked))
-			return false;
-
-		ct_delete_checked_users();
-	});
+		
+	//Show/hide action on mouse over/out
 	jQuery(".cleantalk_user").mouseover(function(){
 		id = jQuery(this).attr("data-id");
 		jQuery("#cleantalk_delete_user_"+id).show();
@@ -337,20 +425,12 @@ jQuery(document).ready(function(){
 		id = jQuery(this).attr("data-id");
 		jQuery("#cleantalk_delete_user_"+id).hide();
 	});
-	
-	//Show/hide action on mouse over/out
-	jQuery(".cleantalk_user").mouseover(function(){
-		id = jQuery(this).attr("data-id");
-		jQuery("#cleantalk_button_set_"+id).show();
-	});
-	jQuery(".cleantalk_user").mouseout(function(){
-		id = jQuery(this).attr("data-id");
-		jQuery("#cleantalk_button_set_"+id).hide();
-	});
-	
+		
 	//Approve button
 	jQuery(".cleantalk_delete_from_list_button").click(function(){
 		ct_id = jQuery(this).attr("data-id");
+		
+		// Approving
 		var data = {
 			'action': 'ajax_ct_approve_user',
 			'security': ct_ajax_nonce,
@@ -418,7 +498,7 @@ jQuery(document).ready(function(){
 	});
 	
 	//Default load actions
-	if(location.href.match(/ct_check_users/) && !location.href.match(/ct_worked=1/)){
-		jQuery("#ct_check_users_button").click();
-	}
+	// if(location.href.match(/ct_check_users/) && !location.href.match(/ct_worked=1/)){
+		// jQuery("#ct_check_spam_button").click();
+	// }
 });

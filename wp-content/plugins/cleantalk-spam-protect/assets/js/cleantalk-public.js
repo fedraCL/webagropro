@@ -16,6 +16,13 @@ jQuery(document).ready(function(){
 	var ct_post_float = jQuery('.ct_comment_info').prev().last().css('float');
 	jQuery('.ct_comment_info').css('float', ct_post_float);
 	
+	var ct_posts = jQuery('.ct_comment_info');
+	
+	jQuery(ct_posts).each(function(indx, elem){
+		curr_elem = jQuery(elem);
+		curr_elem.prev().before(curr_elem);
+	});
+	
 	// Handler for buttons
 	jQuery('.ct_this_is').on('click', function(){
 		

@@ -17,14 +17,17 @@ var ct_working = false,
 // Settings
 var ct_cool_down_time = 65000,
 	ct_requests_counter = 0,
-	ct_max_requests = 95;
+	ct_max_requests = 80;
 // Variables
 var ct_ajax_nonce = ctCommentsCheck.ct_ajax_nonce,
 	ct_comments_total = 0,
 	ct_comments_checked = 0,
 	ct_comments_spam = 0,
 	ct_comments_bad = 0,
-	ct_unchecked = 'unset';
+	ct_unchecked = 'unset',
+	ct_accurate_check = false,
+	ct_date_from = 0,
+	ct_date_till = 0;
 
 function animate_comment(to,id){
 	if(ct_close_animate){
@@ -87,6 +90,14 @@ function ct_send_comments(){
 		'unchecked': ct_unchecked
 	};
 	
+	if(ct_accurate_check)
+		data['accurate_check'] = true;
+	
+	if(ct_date_from && ct_date_till){
+		data['from'] = ct_date_from;
+		data['till'] = ct_date_till;
+	}
+	
 	jQuery.ajax({
 		type: "POST",
 		url: ajaxurl,
@@ -97,9 +108,12 @@ function ct_send_comments(){
 			
 			if(parseInt(msg.error)){
 				ct_working=false;
-				if(!confirm(msg.error_message+". Do you want to proceed?"))
-					location.href='users.php?page=ct_check_spam&ct_worked=1';
-				else
+				if(!confirm(msg.error_message+". Do you want to proceed?")){
+					var new_href = 'edit-comments.php?page=ct_check_spam&ct_worked=1';
+					if(ct_date_from != 0 && ct_date_till != 0)
+						new_href+='&from='+ct_date_from+'&till='+ct_date_till;
+					location.href = new_href;
+				}else
 					ct_send_comments();
 			}else{
 				ct_new_check = false;
@@ -118,7 +132,10 @@ function ct_send_comments(){
 				}else if(parseInt(msg.end) == 1){
 					ct_working=false;
 					jQuery('#ct_working_message').hide();
-					location.href='edit-comments.php?page=ct_check_spam&ct_worked=1';
+					var new_href = 'edit-comments.php?page=ct_check_spam&ct_worked=1';
+					if(ct_date_from != 0 && ct_date_till != 0)
+						new_href+='&from='+ct_date_from+'&till='+ct_date_till;
+					location.href = new_href;
 				}
 			}
 		},
@@ -146,10 +163,17 @@ function ct_show_info(){
 		setTimeout(ct_show_info, 3000);
 		
 		if(!ct_comments_total){
+			
 			var data = {
 				'action': 'ajax_info_comments',
 				'security': ct_ajax_nonce
 			};
+			
+			if(ct_date_from && ct_date_till){
+				data['from'] = ct_date_from;
+				data['till'] = ct_date_till;
+			}
+			
 			jQuery.ajax({
 				type: "POST",
 				url: ajaxurl,
@@ -170,22 +194,30 @@ function ct_show_info(){
 		}
 	}
 }
-function ct_insert_comments(){
+function ct_insert_comments(delete_comments = false){
+	
 	var data = {
 		'action': 'ajax_insert_comments',
 		'security': ct_ajax_nonce
 	};
+	
+	if(delete_comments)
+		data['delete'] = true;
 	
 	jQuery.ajax({
 		type: "POST",
 		url: ajaxurl,
 		data: data,
 		success: function(msg){
-			alert(ctCommentsCheck.ct_comments_added + ' ' + msg + ' ' + ctCommentsCheck.ct_comments_added_after);
+			if(delete_comments)
+				alert(ctCommentsCheck.ct_comments_deleted + ' ' + msg + ' ' + ctCommentsCheck.ct_comments_added_after);
+			else
+				alert(ctCommentsCheck.ct_comments_added   + ' ' + msg + ' ' + ctCommentsCheck.ct_comments_added_after);
 		}
 	});
 }
 function ct_delete_all(){
+	
 	var data = {
 		'action': 'ajax_delete_all',
 		'security': ct_ajax_nonce
@@ -208,10 +240,12 @@ function ct_delete_all(){
 			jQuery('#cleantalk_ajax_error').html(textStatus);
 			jQuery('#cleantalk_js_func').html('Check comments');
 			setTimeout(ct_delete_all(), 3000);   
-		}
+		},
+		timeout: 25000
 	});
 }
 function ct_delete_checked(){
+	
 	ids=Array();
 	var cnt=0;
 	jQuery('input[id^=cb-select-][id!=cb-select-all-1]').each(function(){
@@ -232,27 +266,87 @@ function ct_delete_checked(){
 		data: data,
 		success: function(msg){
 			location.href='edit-comments.php?page=ct_check_spam&ct_worked=1';
-			//alert(msg);
 		},
 		error: function(jqXHR, textStatus, errorThrown) {
 			jQuery('#ct_error_message').show();
 			jQuery('#cleantalk_ajax_error').html(textStatus);
 			jQuery('#cleantalk_js_func').html('Check comments');
 			setTimeout(ct_delete_checked(), 3000);   
-		}
+		},
+		timeout: 15000
 	});
 }
 
+// Function to toggle dependences
+function ct_toggle_depended(obj, secondary = false){
+	
+	var depended = jQuery(obj.data('depended')),
+		state = obj.data('state');
+		
+	if(!state && !secondary){
+		obj.data('state', true);
+		depended.removeProp('disabled');
+	}else{
+		obj.data('state', false);
+		depended.prop('disabled', true);
+		depended.removeProp('checked');
+		if(depended.data('depended'))
+			ct_toggle_depended(depended, true);
+	}
+}
 
 jQuery(document).ready(function(){
 	
+	// Setting dependences
+	// jQuery('#ct_accurate_check')  .data({'depended': '#ct_allow_date_range', 'state': false});
+	jQuery('#ct_allow_date_range').data({'depended': '.ct_date', 'state': false});
+	
+	// Toggle dependences
+	jQuery("#ct_allow_date_range, #ct_accurate_check").on('change', function(){
+		ct_toggle_depended(jQuery(this));
+	});
+	
+	jQuery("#ct_accurate_check").on('change', function(){
+		if(ct_accurate_check)
+			ct_accurate_check = false;
+		else
+			ct_accurate_check = true;
+	});
+		
+	var dates = jQuery('#ct_date_range_from, #ct_date_range_till').datepicker(
+		{
+			dateFormat: 'yy-mm-dd',
+			maxDate:"+0D",
+			changeMonth:true,
+			changeYear:true,
+			showAnim: 'slideDown',
+			onSelect: function(selectedDate){
+			var option = this.id == "ct_date_range_from" ? "minDate" : "maxDate",
+				instance = jQuery( this ).data( "datepicker" ),
+				date = jQuery.datepicker.parseDate(
+					instance.settings.dateFormat || jQuery.datepicker._defaults.dateFormat,
+					selectedDate, instance.settings);
+				dates.not(this).datepicker("option", option, date);
+			}
+		}
+	);
+	jQuery('#ct_date_range_from, #ct_date_range_till').prop('disabled', true);
+/////
+	// Check comments
 	jQuery("#ct_check_spam_button").click(function(){
-		jQuery('#ct_check_spam_button').hide();
-		jQuery('#ct_info_message').hide();
-		jQuery('#ct_check_comments_table').hide();
-		jQuery('#ct_delete_all').hide();
-		jQuery('div.pagination').hide();
-		jQuery('#ct_delete_checked').hide();
+		
+		if(jQuery('#ct_allow_date_range').is(':checked')){
+			
+			ct_date_from = jQuery('#ct_date_range_from').val(),
+			ct_date_till = jQuery('#ct_date_range_till').val();
+						
+			if(!(ct_date_from != '' && ct_date_till != '')){
+				alert('Please, specify a date range.');
+				return;
+			}
+		}
+		
+		jQuery('.ct_to_hide').hide();
 		jQuery('#ct_working_message').show();
 		jQuery('#ct_preloader').show();
 
@@ -264,24 +358,34 @@ jQuery(document).ready(function(){
 	jQuery("#ct_insert_comments").click(function(){
 		ct_insert_comments();
 	});
+	
+	jQuery("#ct_delete_comments").click(function(){
+		ct_insert_comments(true);
+	});
+	
+	// Delete all spam comments
 	jQuery("#ct_delete_all").click(function(){
+		
 		if (!confirm(ctCommentsCheck.ct_confirm_deletion_all))
 			return false;
-
+		
+		jQuery('.ct_to_hide').hide();
 		jQuery('#ct_checking_status').hide();
-		jQuery('#ct_tools_buttons').hide();
 		jQuery('#ct_search_info').hide();
-		jQuery('#ct_check_comments_table').hide();
-		jQuery('div.pagination').hide();
+		jQuery('#ct_preloader').show();
 		jQuery('#ct_deleting_message').show();
+		jQuery('#ct_stop_deletion').show();
 		jQuery("html, body").animate({ scrollTop: 0 }, "slow");
 		ct_delete_all();
 	});
 	jQuery("#ct_delete_checked").click(function(){
 		if (!confirm(ctCommentsCheck.ct_confirm_deletion_checked))
 			return false;
-		
 		ct_delete_checked();
+	});
+	
+	jQuery("#ct_stop_deletion").click(function(){
+		location.href='users.php?page=ct_check_spam&ct_worked=1';
 	});
 	
 	jQuery(".cleantalk_delete_button").click(function(){
@@ -305,6 +409,7 @@ jQuery(document).ready(function(){
 			}
 		});
 	});
+	
 	jQuery(".cleantalk_delete_button").click(function(){
 		id = jQuery(this).attr("data-id");
 		animate_comment(0.3, id);
@@ -371,7 +476,7 @@ jQuery(document).ready(function(){
 	});
 	
 	//Default load actions
-	if(location.href.match(/ct_check_spam/) && !location.href.match(/ct_worked=1/)){
-		jQuery("#ct_check_spam_button").click();
-	}
+	// if(location.href.match(/ct_check_spam/) && !location.href.match(/ct_worked=1/)){
+		// jQuery("#ct_check_spam_button").click();
+	// }
 });

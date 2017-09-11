@@ -3,14 +3,14 @@
   Plugin Name: Anti-Spam by CleanTalk
   Plugin URI: http://cleantalk.org
   Description: Max power, all-in-one, no Captcha, premium anti-spam plugin. No comment spam, no registration spam, no contact spam, protects any WordPress forms. Formerly Anti-Spam by CleanTalk. 
-  Version: 5.73
+  Version: 5.74.2
   Author: СleanTalk <welcome@cleantalk.org>
   Author URI: http://cleantalk.org
 */
-$cleantalk_plugin_version='5.73';
-$ct_agent_version = 'wordpress-573';
+
+$cleantalk_plugin_version='5.74.2';
+$ct_agent_version = 'wordpress-5742';
 $cleantalk_executed=false;
-$ct_sfw_updated = false;
 
 define('CLEANTALK_REMOTE_CALL_SLEEP', 10); // Minimum time between remote call
 
@@ -117,7 +117,20 @@ if(!defined('CLEANTALK_PLUGIN_DIR')){
 	    	}else{
 				$is_sfw_check=true;
 			}
-	    } 
+	    }
+		
+		// Skip the check
+		if(!empty($_GET['access'])){
+			$spbc_settings = get_option('spbc_settings');
+			$spbc_key = !empty($spbc_settings['spbc_key']) ? $spbc_settings['spbc_key'] : false;
+			if($_GET['access'] === $ct_options['apikey'] || ($spbc_key !== false && $_GET['access'] === $spbc_key)){
+				$is_sfw_check = false;
+				setcookie ('spbc_firewall_pass_key', md5($_SERVER['REMOTE_ADDR'].$spbc_key),             time()+1200, '/');
+				setcookie ('ct_sfw_pass_key',        md5($_SERVER['REMOTE_ADDR'].$ct_options['apikey']), time()+1200, '/');
+			}
+			unset($spbc_settings, $spbc_key);
+		}
+		
     	if($is_sfw_check){
     		$sfw->check_ip();
     		if($sfw->result){
@@ -359,7 +372,7 @@ if (!function_exists ( 'ct_activation')) {
 		CleantalkCron::addTask('sfw_update',           'ct_sfw_update',            86400, time()+43200);// SFW update
 		CleantalkCron::addTask('send_sfw_logs',        'ct_sfw_send_logs',         3600,  time()+1800); // SFW send logs
 		CleantalkCron::addTask('get_brief_data',       'cleantalk_get_brief_data', 86400, time()+3500); // Get data for dashboard widget
-		CleantalkCron::addTask('send_daily_request',   'ct_send_daily_request',    86400);              // Daily sends request to servers
+		// CleantalkCron::addTask('send_daily_request',   'ct_send_daily_request',    86400);              // Daily sends request to servers
 		
 		// Additional options
         add_option('ct_plugin_do_activation_redirect', true);

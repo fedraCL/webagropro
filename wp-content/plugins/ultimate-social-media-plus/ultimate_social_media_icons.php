@@ -7,7 +7,7 @@ Author: UltimatelySocial
 Text Domain: ultimate-social-media-plus
 Domain Path: /languages
 Author URI: http://ultimatelysocial.com
-Version: 2.7.0
+Version: 2.7.1
 License: GPLv2
 */
 
@@ -54,6 +54,7 @@ define('SFSI_PLUS_DOMAIN',	   'ultimate-social-media-plus');
 
 /* load all files  */
 include(SFSI_PLUS_DOCROOT.'/libs/controllers/sfsi_socialhelper.php');
+include(SFSI_PLUS_DOCROOT.'/libs/controllers/sfsi_class_theme_check.php');
 include(SFSI_PLUS_DOCROOT.'/libs/sfsi_install_uninstall.php');
 include(SFSI_PLUS_DOCROOT.'/libs/controllers/sfsi_buttons_controller.php');
 include(SFSI_PLUS_DOCROOT.'/libs/controllers/sfsi_iconsUpload_contoller.php');
@@ -72,7 +73,7 @@ register_deactivation_hook(__FILE__, 'sfsi_plus_deactivate_plugin');
 //register_uninstall_hook(__FILE__, 'sfsi_plus_Unistall_plugin');
 
 /*Plugin version setup*/
-if(!get_option('sfsi_plus_pluginVersion') || get_option('sfsi_plus_pluginVersion') < 2.70)
+if(!get_option('sfsi_plus_pluginVersion') || get_option('sfsi_plus_pluginVersion') < 2.71)
 {
 	add_action("init", "sfsi_plus_update_plugin");
 }
@@ -842,4 +843,6 @@ function sfsi_plus_curl_error_notification()
         <?php  
     }   
 }
+
+    //$obj = new sfsi_plus_ThemeCheck();
 ?>

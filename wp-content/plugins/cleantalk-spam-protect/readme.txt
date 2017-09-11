@@ -3,7 +3,7 @@ Contributors: znaeff, shagimuratov, serge00, sartemd174, amagsumov
 Tags: antispam, protection, contact form, comments, spam 
 Requires at least: 3.0
 Tested up to: 4.8
-Stable tag: 5.73
+Stable tag: 5.74.2
 License: GPLv2
 
 Spam protection, antispam, all-in-one, premium plugin. No spam comments & users, no spam contact form & WooCommerce spam. Forget spam.
@@ -506,6 +506,18 @@ We develop plugin to do it as optimized as possible, CleanTalk doesn't downgrade
 1. The plugin deletes/removes the existing spam comments and users accounts. 
 
 == Changelog ==
+= 5.74.2 September 2 2017 =
+  * Fix for users spam check for PHP 5.3 and lower.
+
+= 5.74.1 September 2 2017 =
+  * Fix for the update system and cloud communication.
+  * Added possibility to check users and comments for spam with a specific date range.
+
+= 5.74 August 31 2017 =
+  * Users and comments spam check: Two check types (fast and accurate).
+  * Fix for WooCommerce checkout test.
+  * Minor fixes.
+
 = 5.73 August 11 2017 =
   * Fix for spam check for already existed users and comments.
   * SpamFireWall updated.
@@ -1416,6 +1428,18 @@ We develop plugin to do it as optimized as possible, CleanTalk doesn't downgrade
   * First version
   
 == Upgrade Notice ==
+= 5.74.2 September 2 2017 =
+  * Fix for users spam check for PHP 5.3 and lower.
+
+= 5.74.1 September 2 2017 =
+  * Fix for the update system and cloud communication.
+  * Added possibility to check users and comments for spam with a specific date range.
+
+= 5.74 August 31 2017 =
+  * Users and comments spam check: Two check types (fast and accurate).
+  * Fix for WooCommerce checkout test.
+  * Minor fixes.
+
 = 5.73 August 11 2017 =
   * Fix for spam check for already existed users and comments.
   * SpamFireWall updated.
